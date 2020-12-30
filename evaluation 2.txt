@@ -1,0 +1,155 @@
+Create a tree structure in MySql table that could store the following tree structure:
+http://prnt.sc/wcbzth 
+1) Write a query to find the root node.
+2) Write a query to find leaf node.
+3) Write a query to find non-leaf node.
+4) Write a query to find the path of each node. e.g. http://prnt.sc/wcc4bg5) Write a function to calculate node level. e.g. Electronics is at 0 level, Camera is on level 2 and iOs is on level 3.
+6) Write a procedure to get the immediate children.
+7) Write a trigger to delete all children if parent node was deleted.8) Write
+
+
+
+
+
+Answers:
+CREATE TABLE category (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  title varchar(255) NOT NULL,
+  parent_id int(10) unsigned DEFAULT NULL,
+  PRIMARY KEY (id),
+  FOREIGN KEY (parent_id) REFERENCES category (id) 
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+insert queries:
+INSERT INTO category(title,parent_id) 
+VALUES('Electronics',NULL);
+INSERT INTO category(title,parent_id) 
+VALUES('Laptops & PC',1);
+
+INSERT INTO category(title,parent_id) 
+VALUES('Laptops',2);
+INSERT INTO category(title,parent_id) 
+VALUES('PC',2);
+INSERT INTO category(title,parent_id) 
+VALUES('Cameras & photo',1);
+INSERT INTO category(title,parent_id) 
+VALUES('Camera',5);
+INSERT INTO category(title,parent_id) 
+VALUES('Phones & Accessories',1);
+INSERT INTO category(title,parent_id) 
+VALUES('Smartphones',7);
+INSERT INTO category(title,parent_id) 
+VALUES('Android',8);
+INSERT INTO category(title,parent_id) 
+VALUES('iOS',8);
+INSERT INTO category(title,parent_id) 
+VALUES('Other Smartphones',8);
+INSERT INTO category(title,parent_id) 
+VALUES('Batteries',7);
+INSERT INTO category(title,parent_id) 
+VALUES('Headsets',7);
+INSERT INTO category(title,parent_id) 
+VALUES('Screen Protectors',7);
+
+
+
+
+
+
+
+problem 1:find the leaf node
+SELECT
+    id, title
+FROM
+    category
+WHERE
+    parent_id IS NULL
+-------------------------------------------------------------------------------
+
+problem 2:calculating leaf node
+SELECT
+    id, title
+FROM
+    category
+WHERE
+    parent_id = 1
+--------------------------------------------------------------------------
+
+problem3:calculating non leaf node
+SELECT
+   DISTINCT( c1.id), c1.title
+FROM
+    category c1
+        INNER JOIN
+    category c2 ON c2.parent_id = c1.id
+WHERE
+    c2.id IS NOT NULL
+problem3:
+SELECT
+    c1.id, c1.title
+FROM
+    category c1
+        LEFT JOIN
+    category c2 ON c2.parent_id = c1.id
+WHERE
+    c2.id IS NULL
+------------------------------------------------------------------------
+problem 4: find path of each node
+
+WITH RECURSIVE category_path (id, title, path) AS
+(
+  SELECT id, title, title as path
+    FROM category
+    WHERE parent_id IS NULL
+  UNION ALL
+  SELECT c.id, c.title, CONCAT(cp.path, ' > ', c.title)
+    FROM category_path AS cp JOIN category AS c
+      ON cp.id = c.parent_id
+)
+SELECT * FROM category_path
+ORDER BY path
+-----------------------------------------------------------------
+ problem 5: to calculate node level
+WITH RECURSIVE category_path (id, title, lvl) AS
+(
+  SELECT id, title, 0 lvl
+    FROM category
+    WHERE parent_id IS NULL
+  UNION ALL
+  SELECT c.id, c.title,cp.lvl + 1
+    FROM category_path AS cp JOIN category AS c
+      ON cp.id = c.parent_id
+)
+SELECT * FROM category_path
+ORDER BY lvl
+----------------------------------------------
+with function
+DELIMITER $$
+
+CREATE FUNCTION category_path
+	(id INT(30),title varchar(50),path INT (20))
+     
+RETURNS VARCHAR(20);
+DETERMINISTIC
+BEGIN
+    DECLARE category_path VARCHAR(20);
+    select id,title,0 lvl FROM category WHERE
+    parent_id IS NULL UNION ALL
+    SELECT c.id,c.title,cp.lvl + 1 FROM category AS c ON cp.id = c.parent_id)
+    SELECT * FROM category_path ORDER BY lvl
+END$$ 
+DELIMITER ;
+
+
+---------------------------------------------------------------
+problem 6: to create a procedure to get the immediate children
+CREATE PROCEDURE getCustomers()
+BEGIN
+     SELECT
+           id, title
+     FROM 
+         category
+     WHERE
+         parent_id = 1;
+END
+
